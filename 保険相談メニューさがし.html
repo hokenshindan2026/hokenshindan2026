@@ -1,0 +1,371 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>保険相談メニューさがし</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+/* Layout: 1カラムの質問カード。リンクの #target で画面を切り替える（スクリプト不要）。結果は相談メニュー名を最大に見せる */
+:root {
+  --bg: #EEF2F3;
+  --surface: #FFFFFF;
+  --fg: #16282B;
+  --muted: #4A5F63;
+  --line: #C9D6D8;
+  --accent: #0E6B67;
+  --accent-fg: #FFFFFF;
+  --accent-soft: #DCEFED;
+  --mark: #F3C24B;
+  --font-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1C1E; --surface: #172A2D; --fg: #E6F0F0; --muted: #9DB4B7; --line: #2C4549;
+    --accent: #5CC8C0; --accent-fg: #07201F; --accent-soft: #1D3B3C; --mark: #E0B040;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1C1E; --surface: #172A2D; --fg: #E6F0F0; --muted: #9DB4B7; --line: #2C4549;
+  --accent: #5CC8C0; --accent-fg: #07201F; --accent-soft: #1D3B3C; --mark: #E0B040;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-size: 13px; letter-spacing: 0.12em; color: var(--accent); font-weight: 700; }
+h1 { font-family: var(--font-display); font-size: 28px; line-height: 1.35; margin: 0; font-weight: 900; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); font-size: 15px; }
+
+/* 画面の切り替え: 通常は最初の質問だけ表示。別の画面が #target になったら最初の質問を隠す */
+.view { display: none; scroll-margin-top: 16px; }
+.view:target { display: flex; }
+#q-start { display: flex; }
+.view:target ~ #q-start { display: none; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 24px;
+  flex-direction: column; gap: 20px;
+}
+.qline { display: flex; align-items: center; gap: 12px; }
+.qno { font-family: var(--font-display); font-weight: 900; font-size: 15px; color: var(--accent); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.bar { flex: 1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+h2 { font-family: var(--font-display); font-size: 24px; line-height: 1.5; margin: 0; font-weight: 700; text-wrap: balance; }
+.hint { margin: 0; color: var(--muted); font-size: 15px; }
+
+.answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn {
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+  font-family: var(--font-display); font-weight: 900; font-size: 20px;
+  min-height: 64px; border-radius: 12px; cursor: pointer;
+  border: 2px solid var(--accent); transition: transform .08s ease, background .15s ease;
+}
+.btn.yes { background: var(--accent); color: var(--accent-fg); }
+.btn.no { background: var(--surface); color: var(--accent); }
+.btn:hover { transform: translateY(-1px); }
+.btn.no:hover { background: var(--accent-soft); }
+.btn:focus-visible, .link:focus-visible, .copy:focus-visible, .also:focus-visible { outline: 3px solid var(--mark); outline-offset: 2px; }
+
+.nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.link { display: inline-flex; align-items: center; font-size: 15px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; padding: 8px 4px; min-height: 44px; }
+.link:hover { color: var(--accent); }
+
+/* result */
+.tag { align-self: flex-start; background: var(--accent-soft); color: var(--accent); font-size: 14px; font-weight: 700; padding: 4px 14px; border-radius: 999px; }
+.menu-name { font-size: 30px; line-height: 1.4; font-weight: 900; }
+.menu-name span { background: linear-gradient(transparent 62%, var(--mark) 62%); }
+.lead { margin: 0; }
+.sub { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin: 0; color: var(--muted); }
+ul.points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+ul.points li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+ul.points svg { margin-top: 5px; }
+.also { display: block; background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; font-size: 15px; color: var(--fg); text-decoration: none; }
+.also b { font-family: var(--font-display); color: var(--accent); }
+.also:hover { text-decoration: underline; }
+
+.contact { border-top: 1px solid var(--line); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.contact dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 15px; }
+.contact dt { color: var(--muted); }
+.contact dd { margin: 0; font-weight: 700; }
+.copy { align-self: flex-start; font: inherit; font-weight: 700; font-size: 15px; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 10px; padding: 12px 18px; min-height: 44px; cursor: pointer; }
+.copied { font-size: 14px; color: var(--accent); min-height: 21px; margin: 0; }
+
+footer { font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+
+@media (max-width: 420px) {
+  h1 { font-size: 24px; }
+  .card { padding: 22px 18px; }
+  h2 { font-size: 21px; }
+  .menu-name { font-size: 26px; }
+  .btn { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+}
+
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">無料・約1分</div>
+    <h1>保険相談メニューさがし</h1>
+    <p class="lede">「はい」か「いいえ」で答えるだけで、いまのお悩みに合う相談メニューが見つかります。</p>
+  </header>
+
+  <main>
+<section class="card view" id="q-renew">
+  <div class="qline"><span class="qno">Q2</span><div class="bar" aria-hidden="true"><i style="width:25%"></i></div></div>
+  <h2>更新型の保険ですか？</h2>
+  <p class="hint">10年ごとなど一定期間で更新があり、更新時に保険料が上がるタイプです。わからない場合は、保険証券の「更新」の記載をご確認ください。</p>
+  <div class="answers"><a class="btn yes" href="#q-worry">はい</a><a class="btn no" href="#q-fit">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-start">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-fit">
+  <div class="qline"><span class="qno">Q3</span><div class="bar" aria-hidden="true"><i style="width:38%"></i></div></div>
+  <h2>いまご加入中の保険は、自分にピッタリの内容だと思いますか？</h2>
+  <p class="hint">保障の内容と保険料の両方で考えてみてください。</p>
+  <div class="answers"><a class="btn yes" href="#r-OK">はい</a><a class="btn no" href="#r-C">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-renew">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-worry">
+  <div class="qline"><span class="qno">Q3</span><div class="bar" aria-hidden="true"><i style="width:38%"></i></div></div>
+  <h2>更新のたびに保険料が上がることが気になりますか？</h2>
+  <p class="hint">「次の更新で保険料が1.5〜2倍になる」といったケースです。</p>
+  <div class="answers"><a class="btn yes" href="#q-keep">はい</a><a class="btn no" href="#q-review">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-renew">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-keep">
+  <div class="qline"><span class="qno">Q4</span><div class="bar" aria-hidden="true"><i style="width:50%"></i></div></div>
+  <h2>保険料は今と同じくらいに保ちつつ、将来のお金も貯めたいですか？</h2>
+  <p class="hint">保険料を上げずに、貯まる部分のある保障へ切り替える考え方です。</p>
+  <div class="answers"><a class="btn yes" href="#r-A">はい</a><a class="btn no" href="#r-B">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-worry">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-review">
+  <div class="qline"><span class="qno">Q4</span><div class="bar" aria-hidden="true"><i style="width:50%"></i></div></div>
+  <h2>いまの保障が暮らしに合っているか、見直したことはありますか？</h2>
+  <p class="hint">結婚、出産、住宅購入、転職などの節目で、必要な保障は変わります。</p>
+  <div class="answers"><a class="btn yes" href="#q-save">はい</a><a class="btn no" href="#r-C">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-worry">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-save">
+  <div class="qline"><span class="qno">Q5</span><div class="bar" aria-hidden="true"><i style="width:63%"></i></div></div>
+  <h2>保障に加えて、将来のためのお金も準備したいですか？</h2>
+  <p class="hint">教育費や老後資金など、使う時期が決まっているお金です。</p>
+  <div class="answers"><a class="btn yes" href="#q-edu">はい</a><a class="btn no" href="#q-sick">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-review">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-edu">
+  <div class="qline"><span class="qno">Q6</span><div class="bar" aria-hidden="true"><i style="width:75%"></i></div></div>
+  <h2>お子さまの教育資金を準備したいですか？</h2>
+  <p class="hint">進学の時期にあわせて計画的に備える方法です。</p>
+  <div class="answers"><a class="btn yes" href="#r-D">はい</a><a class="btn no" href="#r-E">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-save">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-sick">
+  <div class="qline"><span class="qno">Q6</span><div class="bar" aria-hidden="true"><i style="width:75%"></i></div></div>
+  <h2>入院・病気・ケガで働けなくなったときの出費が心配ですか？</h2>
+  <p class="hint">治療費だけでなく、収入が減る期間の生活費も含みます。</p>
+  <div class="answers"><a class="btn yes" href="#r-F">はい</a><a class="btn no" href="#q-family">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-save">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-family">
+  <div class="qline"><span class="qno">Q7</span><div class="bar" aria-hidden="true"><i style="width:88%"></i></div></div>
+  <h2>万一のとき、家族に残すお金を考えたいですか？</h2>
+  <p class="hint">葬儀費用、生活費、相続の準備などです。</p>
+  <div class="answers"><a class="btn yes" href="#r-G">はい</a><a class="btn no" href="#r-C">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-sick">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="q-curious">
+  <div class="qline"><span class="qno">Q2</span><div class="bar" aria-hidden="true"><i style="width:25%"></i></div></div>
+  <h2>保険のこと、気になっていますか？</h2>
+  <p class="hint">なんとなく気になる、という程度でも大丈夫です。</p>
+  <div class="answers"><a class="btn yes" href="#r-I">はい</a><a class="btn no" href="#r-No">いいえ</a></div>
+  <div class="nav"><a class="link" href="#q-start">← ひとつ前に戻る</a><a class="link" href="#q-start">最初からやり直す</a></div>
+</section>
+<section class="card view" id="r-A">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>更新型からの切り替え相談</span></h2>
+  <p class="lead">更新のたびに上がる保険料を抑えつつ、貯まる部分のある保障に見直す相談です。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>現在の保険料と、次回更新後の保険料を並べて確認します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>同じ水準の保険料で、保障と貯まる部分がどう変わるかを比べます</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>切り替えで変わる点（健康状態の確認、解約返戻金など）を事前に整理します</span></li></ul>
+  <a class="also" href="#r-C">あわせて考えたい方は <b>保障の総点検</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】更新型からの切り替え相談">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-B">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>保険料を軽くする見直し相談</span></h2>
+  <p class="lead">更新後の保険料が負担になっている方に、必要な保障を絞って月々の支払いを整える相談です。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>いまの保障のうち、優先して残したい部分を一緒に選びます</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>保障額や期間の調整で、保険料がどう変わるかを確認します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>将来、貯蓄に回せる余地があるかも合わせて見ます</span></li></ul>
+  <a class="also" href="#r-C">あわせて考えたい方は <b>保障の総点検</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】保険料を軽くする見直し相談">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-C">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>保障の総点検</span></h2>
+  <p class="lead">加入中の保険を一覧にして、過不足や重複がないかを確認する相談です。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>保険証券をもとに、保障内容と保険料を整理します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>いまの家族構成・収入に対して足りない保障、多すぎる保障を確認します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>見直す必要がなければ、そのまま継続という結論もあります</span></li></ul>
+  <a class="also" href="#r-A">あわせて考えたい方は <b>更新型からの切り替え相談</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】保障の総点検">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-D">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>教育資金づくり相談</span></h2>
+  <p class="lead">お子さまの進学時期にあわせて、保障と積み立てを両立する方法を考える相談です。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>必要になる時期と、準備したい金額の目安を整理します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>毎月の積み立て額と、万一のときの備えを一緒に設計します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>家計に無理のない保険料の範囲を確認します</span></li></ul>
+  <a class="also" href="#r-E">あわせて考えたい方は <b>老後資金・資産づくり相談</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】教育資金づくり相談">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-E">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>老後資金・資産づくり相談</span></h2>
+  <p class="lead">将来のために、保障を持ちながらお金を貯める方法を考える相談です。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>いつ頃、いくら必要になりそうかの目安を整理します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>貯まる部分のある保険など、選択肢の特徴と注意点を比べます</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>いまの保険料のまま取り組めるかを確認します</span></li></ul>
+  <a class="also" href="#r-C">あわせて考えたい方は <b>保障の総点検</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】老後資金・資産づくり相談">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-F">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>医療・がん・働けないときの備え相談</span></h2>
+  <p class="lead">入院や病気、ケガで収入が減るときに備え、必要な保障を整理する相談です。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>公的な保障と、貯蓄でまかなえる部分を確認します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>足りない部分に対して、医療・がん・就業不能などの保障を比べます</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>保険料が負担にならない組み合わせを考えます</span></li></ul>
+  <a class="also" href="#r-C">あわせて考えたい方は <b>保障の総点検</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】医療・がん・働けないときの備え相談">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-G">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>万一の保障・相続の準備相談</span></h2>
+  <p class="lead">家族に残すお金の必要額を整理し、備え方を考える相談です。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>残された家族の生活費や、葬儀費用などの目安を整理します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>死亡保障の金額と期間が、いまの内容で足りているかを確認します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>相続を見据えた準備について、基本的な考え方を説明します</span></li></ul>
+  <a class="also" href="#r-C">あわせて考えたい方は <b>保障の総点検</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】万一の保障・相続の準備相談">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-I">
+  <span class="tag">あなたにおすすめの相談メニュー</span>
+  <h2 class="menu-name"><span>あなたにピッタリの保険を考える相談</span></h2>
+  <p class="lead">あなたにピッタリの保険を、一緒に考えるお手伝いができます。</p>
+  <h3 class="sub">相談でお話しすること</h3><ul class="points"><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>公的な保障と民間の保険の役割の違いを説明します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ご家族の状況から、考えておきたい備えを一緒に洗い出します</span></li><li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="var(--accent)"/><path d="M6.2 11.4l3.1 3.1 6.4-6.8" fill="none" stroke="var(--accent-fg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>その場で加入を決める必要はありません</span></li></ul>
+  <a class="also" href="#r-E">あわせて考えたい方は <b>老後資金・資産づくり相談</b> もご相談いただけます。 →</a>
+  <div class="contact">
+    <h3 class="sub">ご相談はこちら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    <button class="copy" type="button" hidden data-text="【希望する相談メニュー】あなたにピッタリの保険を考える相談">相談したいメニューをコピーする</button><p class="copied" role="status"></p>
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-OK">
+  <span class="tag">診断結果</span>
+  <h2 class="menu-name"><span>良かったですね！</span></h2>
+  <p class="lead">いまのご加入内容が、あなたにピッタリなのですね。結婚、出産、住宅購入、転職など暮らしが変わったときは、一度見直してみてください。</p>
+  
+  
+  <div class="contact">
+    <h3 class="sub">気になることが出てきたら</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" id="r-No">
+  <span class="tag">診断結果</span>
+  <h2 class="menu-name"><span>気が変わったら、いつでもご相談ください</span></h2>
+  <p class="lead">相談は、気が向いたときで大丈夫です。保険のことが気になりはじめたら、お気軽にお声がけください。</p>
+  
+  
+  <div class="contact">
+    <h3 class="sub">ご相談の窓口</h3>
+    <dl><dt>会社名</dt><dd>[会社名を入れてください]</dd><dt>担当</dt><dd>[担当者名]</dd><dt>電話</dt><dd>[000-0000-0000]</dd><dt>受付時間</dt><dd>[受付時間]</dd></dl>
+    
+  </div>
+  <div class="nav"><a class="link" href="#q-start">もう一度診断する</a></div>
+</section>
+<section class="card view" data-default id="q-start">
+  <div class="qline"><span class="qno">Q1</span><div class="bar" aria-hidden="true"><i style="width:13%"></i></div></div>
+  <h2>現在、保険に入っていますか？</h2>
+  <p class="hint">生命保険・医療保険・がん保険など、民間の保険が対象です。</p>
+  <div class="answers"><a class="btn yes" href="#q-renew">はい</a><a class="btn no" href="#q-curious">いいえ</a></div>
+  <div class="nav"></div>
+</section>
+  </main>
+
+  <footer>
+    この診断は、ご相談内容を整理するための目安です。特定の保険商品をおすすめするものではありません。保険料や貯まる金額は、商品・年齢・性別・保障内容などにより異なります。現在のご契約を解約・変更する場合は、健康状態によりお引き受けできないことや、保障内容・解約返戻金が変わることがあります。お手続き前に内容を十分にご確認ください。
+  </footer>
+</div>
+
+<script>
+/* コピーボタンだけに使う補助機能。動かなくても診断は使えます */
+(function () {
+  try {
+    document.querySelectorAll(".copy").forEach(function (b) {
+      b.hidden = false;
+      b.addEventListener("click", function () {
+        var msg = b.nextElementSibling;
+        var text = b.getAttribute("data-text");
+        function done(ok) { if (msg) msg.textContent = ok ? "コピーしました。担当者への連絡にそのまま貼り付けられます。" : "コピーできませんでした。メニュー名を直接お伝えください。"; }
+        function fallback() {
+          var ta = document.createElement("textarea");
+          ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+          document.body.removeChild(ta); done(ok);
+        }
+        try { navigator.clipboard.writeText(text).then(function () { done(true); }, fallback); } catch (e) { fallback(); }
+      });
+    });
+  } catch (e) {}
+})();
+</script>
+
+</body></html>
